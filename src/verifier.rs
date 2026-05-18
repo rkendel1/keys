@@ -1298,9 +1298,34 @@ impl Verifier {
 /// # Returns
 /// * `String` - Original string if short enough, or truncated version
 fn truncate(s: &str, max: usize) -> String {
-    if s.len() <= max {
+    let char_count = s.chars().count();
+
+    if char_count <= max {
         s.to_string()
+    } else if max <= 3 {
+        ".".repeat(max)
     } else {
-        format!("...{}", &s[s.len() - max + 3..])
+        let suffix_len = max - 3;
+        let suffix: String = s.chars().skip(char_count - suffix_len).collect();
+        format!("...{}", suffix)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::truncate;
+
+    #[test]
+    fn truncate_keeps_multibyte_repo_name_within_character_limit() {
+        let repo_name = "瀛州纪/some-long-repo";
+
+        assert_eq!(truncate(repo_name, 20), repo_name);
+    }
+
+    #[test]
+    fn truncate_shortens_long_multibyte_repo_name_on_character_boundary() {
+        let repo_name = "owner/瀛州纪/some-long-repo";
+
+        assert_eq!(truncate(repo_name, 20), "...州纪/some-long-repo");
     }
 }

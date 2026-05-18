@@ -838,9 +838,34 @@ impl Scanner {
 /// # Returns
 /// * `String` - Original string if short enough, or truncated version
 fn truncate(s: &str, max: usize) -> String {
-    if s.len() <= max {
+    let char_count = s.chars().count();
+
+    if char_count <= max {
         s.to_string()
+    } else if max <= 3 {
+        ".".repeat(max)
     } else {
-        format!("...{}", &s[s.len() - max + 3..])
+        let suffix_len = max - 3;
+        let suffix: String = s.chars().skip(char_count - suffix_len).collect();
+        format!("...{}", suffix)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::truncate;
+
+    #[test]
+    fn truncate_keeps_multibyte_path_within_character_limit() {
+        let path = "瀛州纪/.env.backup";
+
+        assert_eq!(truncate(path, 20), path);
+    }
+
+    #[test]
+    fn truncate_shortens_long_multibyte_path_on_character_boundary() {
+        let path = "owner/repo/瀛州纪/.env.backup";
+
+        assert_eq!(truncate(path, 20), "...o/瀛州纪/.env.backup");
     }
 }
